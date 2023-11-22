@@ -21,6 +21,7 @@ typedef struct {
 // Estructura para los usuarios
 typedef struct {
     char nombre[50];
+    char password[50];
     TipoUsuario tipo;
 } Usuario;
 // Estructura para las ventas
@@ -41,4 +42,5 @@ void ActualizarProducto();
 void RegistrarVenta();
 
 #endif
+
 
