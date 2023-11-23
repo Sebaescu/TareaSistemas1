@@ -3,12 +3,38 @@
 #include "funciones.h"
 
 // Datos de ejemplo
-Usuario usuarios[10];
-Producto productos[50];
+Usuario usuarios[MAXU];
+Producto productos[MAX];
 int cantidadUsuarios = 0;
 int cantidadProductos = 0;
 
+/* Función para validar el usuario y contraseña
+int validar_usuario(char *usuario, char *contraseña) {
 
+ // Declarar variables
+ struct usuario usuario_registrado;
+
+ // Abrir el archivo de usuarios
+ FILE *archivo_usuarios = fopen("usuarios.txt", "r");
+
+ // Si el archivo no existe, crearlo en modo de solo lectura
+ if (archivo_usuarios == NULL) {
+  archivo_usuarios = fopen("usuarios.txt", "r+");
+ }
+
+ // Leer el archivo de usuarios
+ while (fread(&usuario_registrado, sizeof(struct usuario), 1, archivo_usuarios) == 1) {
+ // Comparar el usuario y contraseña ingresados con los registrados
+ if (strcmp(usuario_registrado.nombre, usuario) == 0 &&
+  strcasecmp(usuario_registrado.contraseña, contraseña) == 0) {
+  return usuario_registrado.rol;
+  }
+}
+
+// Si el usuario no se encuentra registrado, devolver -1
+fclose(archivo_usuarios);
+return -1;
+}*/
 void IniciarSesion(TipoUsuario tipoUsuario) {
   // Si el usuario es administrador, le da la opción de crear o actualizar un usuario
   if (tipoUsuario == ADMINISTRADOR) {
@@ -97,72 +123,96 @@ void CrearUsuario() {
     printf("Tipo de usuario (0: Administrador, 1: Bodeguero, 2: Vendedor): ");
     int tipoUsuario;
     scanf("%d", &tipoUsuario);
-  
+
     if (tipoUsuario < 0 || tipoUsuario > 2) {
-        printf("Tipo de usuario no válido. Se asignará como Vendedor por defecto.\n");
-        nuevoUsuario.tipo = VENDEDOR;
+      printf("Tipo de usuario no válido. Se asignará como Vendedor por defecto.\n");
+      nuevoUsuario.tipo = VENDEDOR;
     } else {
-        nuevoUsuario.tipo = (TipoUsuario)tipoUsuario;
+      nuevoUsuario.tipo = (TipoUsuario)tipoUsuario;
     }
-      usuarios[cantidadUsuarios++] = nuevoUsuario;
-      printf("Usuario creado con éxito.\n");
+
+    // Concatena los datos del usuario en una cadena
+    char cadenaUsuario[MAX];
+    sprintf(cadenaUsuario, "%s|%s|%d", nuevoUsuario.nombre, nuevoUsuario.password, nuevoUsuario.tipo);
+
+    // Abre el archivo usuarios.txt para escritura
+    FILE *archivo = fopen("usuarios.txt", "a");
+
+    // Escribe la cadena del usuario en el archivo
+    fprintf(archivo, "%s\n", cadenaUsuario);
+
+    // Cierra el archivo
+    fclose(archivo);
+
+    printf("Usuario creado con éxito.\n");
   } else {
-      printf("Límite de usuarios alcanzado. No se pueden agregar más usuarios.\n");
+    printf("Límite de usuarios alcanzado. No se pueden agregar más usuarios.\n");
   }
 }
 
 void ActualizarUsuario() {
-    char nombreUsuario[50];
-    printf("-------------------------------------------------\n");
-    printf("Ingrese el nombre del usuario que desea actualizar: ");
-    scanf("%s", nombreUsuario);
+  // Read the users from the file
+  int usuarioCount = 0;
+  FILE *archivo = fopen("usuarios.txt", "r");
+  while (!feof(archivo)) {
+    Usuario usuarioLeido;
+    fscanf(archivo, "%[^|]|%[^|]|%d\n", usuarioLeido.nombre, usuarioLeido.password, &usuarioLeido.tipo);
+    usuarios[usuarioCount] = usuarioLeido;
+    usuarioCount++;
+  }
+  fclose(archivo);
 
-    int encontrado = 0;
-    for (int i = 0; i < cantidadUsuarios; i++) {
-      if (strcmp(usuarios[i].nombre, nombreUsuario) == 0) {
-                // El usuario ha sido encontrado
-        printf("Usuario encontrado:\n");
-        printf("Nombre: %s\n", usuarios[i].nombre);
-        printf("Contraseña: %s\n",usuarios[i].password);
-        printf("Tipo de usuario (0: Administrador, 1: Bodeguero, 2: Vendedor): %d\n", usuarios[i].tipo);
-        printf("-------------------------------------------------\n");
-        printf("¿Qué desea actualizar?\n");
-        printf("1. Nombre\n");
-        printf("2. Contraseña\n");
-        printf("3. Tipo de usuario\n");
-        int opcion;
-        scanf("%d", &opcion);
-        switch (opcion) {
-          case 1:
-            printf("Ingrese el nuevo nombre del usuario: ");
-            scanf("%s", usuarios[i].nombre);
-            printf("Usuario actualizado con éxito.\n");
-            break;
-          case 2:
-            printf("Ingrese la nueva contraseña del usuario: ");
-            scanf("%s", usuarios[i].password);
-            printf("Usuario actualizado con éxito.\n");
-            break;
-          case 3:
-            printf("Ingrese el nuevo tipo de usuario (0: Administrador, 1: Bodeguero, 2: Vendedor): ");
-            int nuevoTipoUsuario;
-            scanf("%d", &nuevoTipoUsuario);
-    
-            if (nuevoTipoUsuario < 0 || nuevoTipoUsuario > 2) {
-                printf("Tipo de usuario no válido. No se actualizará.\n");
-            } else {
-                usuarios[i].tipo = (TipoUsuario)nuevoTipoUsuario;
-                printf("Usuario actualizado con éxito.\n");
-            }
-            break;
-        encontrado = 1;
+  // Prompt for the user to update
+  printf("Ingrese el nombre del usuario a actualizar: ");
+  char nombreUsuario[50];
+  scanf("%s", nombreUsuario);
+
+  // Search for the user in the array
+  int usuarioIndex = -1;
+  for (int i = 0; i < usuarioCount; i++) {
+    if (strcmp(usuarios[i].nombre, nombreUsuario) == 0) {
+      usuarioIndex = i;
+      break;
+    }
+  }
+
+  // Update the user if found
+  if (usuarioIndex != -1) {
+    // Prompt for the attribute to update
+    printf("¿Qué desea actualizar?\n");
+    printf("1. Nombre\n");
+    printf("2. Contraseña\n");
+    printf("3. Tipo de usuario\n");
+    int opcion;
+    scanf("%d", &opcion);
+
+    // Update the user based on the selected attribute
+    switch (opcion) {
+      case 1:
+        printf("Ingrese el nuevo nombre del usuario: ");
+        scanf("%s", usuarios[usuarioIndex].nombre);
         break;
-      }
+      case 2:
+        printf("Ingrese la nueva contraseña del usuario: ");
+        scanf("%s", usuarios[usuarioIndex].password);
+        break;
+      case 3:
+        printf("Ingrese el nuevo tipo de usuario (0: Administrador, 1: Bodeguero, 2: Vendedor): ");
+        scanf("%d", &usuarios[usuarioIndex].tipo);
+        break;
     }
-    if (!encontrado) {
-        printf("Usuario no encontrado con el nombre ingresado.\n");
+
+    // Rewrite the users file
+    archivo = fopen("usuarios.txt", "w");
+    for (int i = 0; i < usuarioCount; i++) {
+      fprintf(archivo, "%s|%s|%d\n", usuarios[i].nombre, usuarios[i].password, usuarios[i].tipo);
     }
-  } 
+    fclose(archivo);
+
+    printf("Usuario actualizado con éxito.\n");
+  } else {
+    printf("Usuario no encontrado con el nombre ingresado.\n");
+  }
 }
 
 
@@ -183,30 +233,57 @@ void CrearProducto() {
     printf("Cantidad en bodega: ");
     scanf("%d", &nuevoProducto.cantidadBodega);
     productos[cantidadProductos++] = nuevoProducto;
-    printf("Producto creado con éxito.\n");
+    char cadenaProducto[MAX];
+    sprintf(cadenaProducto, "%s|%s|%s|%d|%f|%d", nuevoProducto.nombre, nuevoProducto.categoria, nuevoProducto.marca,nuevoProducto.codigo,nuevoProducto.precioCompra,nuevoProducto.cantidadBodega);
+
+    // Abre el archivo productos.txt para escritura
+    FILE *archivo = fopen("productos.txt", "a");
+
+    // Escribe la cadena del producto en el archivo
+    fprintf(archivo, "%s\n", cadenaProducto);
+
+    // Cierra el archivo
+    fclose(archivo);
+     printf("Producto creado con éxito.\n");
   } else {
-        printf("Límite de productos alcanzado. No se pueden agregar más productos.\n");
+      printf("Límite de productos alcanzado. No se pueden agregar más productos.\n");
   }
 }
 
 
 void ActualizarProducto() {
+  int productoCount = 0;
+  FILE *archivo = fopen("productos.txt", "r");
+  while (!feof(archivo)) {
+    Producto productoLeido;
+    fscanf(archivo, "%[^|]|%[^|]|%[^|]|%d|%f|%d\n", productoLeido.nombre, productoLeido.categoria, productoLeido.marca, &productoLeido.codigo, &productoLeido.precioCompra, &productoLeido.cantidadBodega);
+    productos[productoCount] = productoLeido;
+    productoCount++;
+  }
+  fclose(archivo);
+
   int codigoProducto;
   printf("-------------------------------------------------\n");
   printf("Ingrese el código del producto que desea actualizar: ");
-  scanf("%d", &codigoProducto);
-  int encontrado = 0;
-  for (int i = 0; i < cantidadProductos; i++) {
+  int productoIndex = -1;
+  for (int i = 0; i < productoCount; i++) {
     if (productos[i].codigo == codigoProducto) {
+      productoIndex = i;
+      break;
+    }
+  }
+  printf("%d\n",productoIndex);
+  int encontrado = 0;
+  if (productoIndex != -1) {
       // El producto ha sido encontrado
       printf("-------------------------------------------------\n");
       printf("Producto encontrado:\n");
-      printf("Nombre: %s\n", productos[i].nombre);
-      printf("Categoría: %s\n", productos[i].categoria);
-      printf("Marca: %s\n", productos[i].marca);
-      printf("Código: %d\n", productos[i].codigo);
-      printf("Precio de compra: %.2f\n", productos[i].precioCompra);
-      printf("Cantidad en bodega: %d\n", productos[i].cantidadBodega);
+      printf("Nombre: %s\n", productos[productoIndex].nombre);
+      printf("Categoría: %s\n", productos[productoIndex].categoria);
+      printf("Marca: %s\n", productos[productoIndex].marca);
+      printf("Código: %d\n", productos[productoIndex].codigo);
+      printf("Precio de compra: %.2f\n", productos[productoIndex].precioCompra);
+      printf("Cantidad en bodega: %d\n", productos[productoIndex].cantidadBodega);
       printf("-------------------------------------------------\n");
       printf("¿Qué desea actualizar?\n");
       printf("1. Nombre\n");
@@ -219,76 +296,106 @@ void ActualizarProducto() {
       switch (opcion) {
         case 1:
           printf("Ingrese el nuevo nombre del producto: ");
-          scanf("%s", productos[i].nombre);
+          scanf("%s", productos[productoIndex].nombre);
           printf("Producto actualizado con éxito.\n");
           break;
         case 2:
           printf("Ingrese la nueva categoría del producto: ");
-          scanf("%s", productos[i].categoria);
+          scanf("%s", productos[productoIndex].categoria);
           printf("Producto actualizado con éxito.\n");
           break;
         case 3:
           printf("Ingrese la nueva marca del producto: ");
-          scanf("%s", productos[i].marca);
+          scanf("%s", productos[productoIndex].marca);
           printf("Producto actualizado con éxito.\n");
           break;
         case 4:
           printf("Ingrese el nuevo precio de compra del producto: ");
-          scanf("%f", &productos[i].precioCompra);
+          scanf("%f", &productos[productoIndex].precioCompra);
           printf("Producto actualizado con éxito.\n");
           break;
         case 5:
           printf("Ingrese la nueva cantidad en bodega del producto: ");
-          scanf("%d", &productos[i].cantidadBodega);
+          scanf("%d", &productos[productoIndex].cantidadBodega);
           printf("Producto actualizado con éxito.\n");
           break;
         default:
           printf("Opción no válida.\n");
           break;
       }
-      encontrado = 1;
-      break;
+    // Rewrite the users file
+    archivo = fopen("productos.txt", "w");
+    for (int i = 0; i < productoCount; i++) {
+      fprintf(archivo, "%s|%s|%s|%d|%f|%d\n", productos[i].nombre, productos[i].categoria, productos[i].marca,productos[i].codigo,productos[i].precioCompra,productos[i].cantidadBodega);
     }
+    fclose(archivo);
+    
   }
-  if (!encontrado) {
+  if (productoIndex == -1) {
     printf("Producto no encontrado con el código ingresado.\n");
   }
 }
-
 void RegistrarVenta() {
     Venta nuevaVenta;
+    int productoCount = 0;
+    FILE *archivo = fopen("productos.txt", "r");
+    while (!feof(archivo)) {
+      Producto productoLeido;
+      fscanf(archivo, "%[^|]|%[^|]|%[^|]|%d|%f|%d\n", productoLeido.nombre, productoLeido.categoria, productoLeido.marca, &productoLeido.codigo, &productoLeido.precioCompra, &productoLeido.cantidadBodega);
+      productos[productoCount] = productoLeido;
+      productoCount++;
+    }
+    fclose(archivo);
+    int codigoProducto;
     printf("-------------------------------------------------\n");
     printf("Código del producto vendido: ");
-    scanf("%d", &nuevaVenta.codigoProducto);
-
-    int encontrado = 0;
-    for (int i = 0; i < cantidadProductos; i++) {
-        if (productos[i].codigo == nuevaVenta.codigoProducto) {
-            // Producto encontrado
-            encontrado = 1;
-
-            // Solicita detalles de la venta
-            printf("Local de la venta: ");
-            scanf("%s", nuevaVenta.local);
-            printf("Vendedor: ");
-            scanf("%s", nuevaVenta.vendedor);
-            printf("Fecha de la venta: ");
-            scanf("%s", nuevaVenta.fechaVenta);
-            printf("Precio de la venta: ");
-            scanf("%f", &nuevaVenta.precioVenta);
-            printf("Cantidad vendida: ");
-            scanf("%d", &nuevaVenta.cantidadVendida);
-
-            // Actualiza la cantidad en bodega del producto
-            productos[i].cantidadBodega -= nuevaVenta.cantidadVendida;
-
-            printf("Venta registrada con éxito.\n");
-            break;
-        }
+    scanf("%d", &codigoProducto);
+    int productoIndex = -1;
+    for (int i = 0; i < productoCount; i++) {
+      if (productos[i].codigo == codigoProducto) {
+        productoIndex = i;
+        break;
+      }
     }
+    if (productoIndex != -1){
+            // Solicita detalles de la venta
+      printf("-------------------------------------------------\n");
+      printf("Producto Encontrado: \n");
+      scanf("Nombre: %s", productos[productoIndex].nombre);
+      printf("-------------------------------------------------\n");
+      printf("Detalles de la venta: \n");
+      printf("Local de la venta: ");
+      scanf("%s", nuevaVenta.local);
+      printf("Vendedor: ");
+      scanf("%s", nuevaVenta.vendedor);
+      printf("Fecha de la venta: ");
+      scanf("%s", nuevaVenta.fechaVenta);
+      printf("Precio de la venta: ");
+      scanf("%f", &nuevaVenta.precioVenta);
+      printf("Cantidad vendida: ");
+      scanf("%d", &nuevaVenta.cantidadVendida);
 
-    if (!encontrado) {
+      // Actualiza la cantidad en bodega del producto
+    productos[productoIndex].cantidadBodega -= nuevaVenta.cantidadVendida;
+    char cadenaVenta[MAX];
+    sprintf(cadenaVenta, "%d|%s|%s|%s|%f|%d",productos[productoIndex].codigo,nuevaVenta.local, nuevaVenta.vendedor, nuevaVenta.fechaVenta,nuevaVenta.precioVenta,nuevaVenta.cantidadVendida);
+
+            // Abre el archivo productos.txt para escritura
+      FILE *archivo = fopen("ventas.txt", "a");
+
+            // Escribe la cadena del producto en el archivo
+      fprintf(archivo, "%s\n", cadenaVenta);
+
+            // Cierra el archivo
+      fclose(archivo);
+      archivo = fopen("productos.txt", "w");
+      for (int i = 0; i < productoCount; i++) {
+        fprintf(archivo, "%s|%s|%s|%d|%f|%d\n", productos[i].nombre, productos[i].categoria, productos[i].marca,productos[i].codigo,productos[i].precioCompra,productos[i].cantidadBodega);
+      }
+      fclose(archivo);
+      printf("Venta registrada con éxito.\n");
+    }
+    if (productoIndex == -1) {
         printf("Producto no encontrado con el código ingresado. No se puede registrar la venta.\n");
     }
-}
-
+  }

@@ -1,6 +1,8 @@
 #ifndef FUNCIONES_H
 #define FUNCIONES_H
-
+#define MAX 50
+#define MAXS 20
+#define MAXU 10
 // Enumeración para los tipos de usuarios
 typedef enum {
     ADMINISTRADOR,
@@ -10,9 +12,9 @@ typedef enum {
 
 // Estructura para los productos
 typedef struct {
-    char nombre[50];
-    char categoria[50];
-    char marca[50];
+    char nombre[MAXS];
+    char categoria[MAXS];
+    char marca[MAXS];
     int codigo;
     float precioCompra;
     int cantidadBodega;
@@ -20,15 +22,15 @@ typedef struct {
 
 // Estructura para los usuarios
 typedef struct {
-    char nombre[50];
-    char password[50];
+    char nombre[MAXS];
+    char password[MAXS];
     TipoUsuario tipo;
 } Usuario;
 // Estructura para las ventas
 typedef struct {
-    char local[50];
-    char vendedor[50];
-    char fechaVenta[20];
+    char local[MAXS];
+    char vendedor[MAXS];
+    char fechaVenta[MAXS];
     float precioVenta;
     int codigoProducto;
     int cantidadVendida;
@@ -42,5 +44,6 @@ void ActualizarProducto();
 void RegistrarVenta();
 
 #endif
+
 
 
